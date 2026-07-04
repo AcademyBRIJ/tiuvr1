@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CBT D'BRIJ Academy</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col antialiased">
+
+    <div id="login-page" class="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-md rounded-lg shadow-xl border border-gray-200 overflow-hidden">
+            <div class="bg-blue-600 text-white p-5 text-center">
+                <h1 class="text-xl font-bold tracking-wide">D'BRIJ Academy</h1>
+                <p class="text-xs text-blue-100 mt-1">Sistem Seleksi & Ujian Berbasis Komputer</p>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nama Lengkap Peserta</label>
+                    <input type="text" id="username-input" placeholder="Masukkan nama lengkap Anda..." 
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Password</label>
+                    <input type="password" id="password-input" placeholder="Masukkan password ujian..." 
+                        class="w-full px-4 py-2.5 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:outline-none transition">
+                </div>
+                <button onclick="mulaiUjian()" 
+                    class="w-full bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-3 px-4 rounded-md shadow transition duration-200 cursor-pointer text-center block">
+                    MULAI UJIAN
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="score-modal" class="fixed inset-0 bg-gray-900/60 hidden items-center justify-center z-50 p-4">
+        <div class="bg-white w-full max-w-sm rounded-lg shadow-2xl border border-gray-200 text-center overflow-hidden">
+            <div class="bg-green-600 text-white p-5">
+                <h3 class="text-lg font-bold">Ujian Selesai!</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <p class="text-sm text-gray-600">Skor hasil evaluasi ujian Anda:</p>
+                <div class="text-5xl font-black text-blue-600 my-2" id="display-skor">0</div>
+                <div class="text-sm text-gray-700 border-t border-b border-gray-100 py-2">
+                    <span class="text-green-600 font-bold" id="display-benar">0</span> Benar dari <span class="font-bold text-gray-900" id="display-total">0</span> Soal
+                </div>
+                <button onclick="tutupSkorDanReview()" 
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded transition cursor-pointer">
+                    Lihat Koreksi & Pembahasan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="main-app" class="hidden flex-col flex-1 min-h-screen">
+        
+        <header class="bg-sky-200 border-b border-sky-300 px-4 py-3 shadow-sm sticky top-0 z-40">
+            <div class="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center gap-2">
+                <div class="flex items-center gap-3">
+                    <div class="bg-blue-700 text-white font-bold px-3 py-1 rounded text-sm tracking-wider">ANBK</div>
+                    <span class="font-bold text-gray-800 text-base md:text-lg">D'Ajiks Academy</span>
+                </div>
+                <div class="flex flex-wrap items-center gap-4 text-sm text-gray-700">
+                    <div class="bg-white/80 px-3 py-1 rounded border border-sky-300">
+                        Peserta: <span id="display-nama" class="font-bold text-blue-900">-</span>
+                    </div>
+                    <div id="timer-container" class="bg-red-500 text-white px-4 py-1 rounded font-mono font-bold animate-pulse shadow-sm flex items-center gap-1">
+                        ⏱️ <span id="timer">00:30:00</span>
+                    </div>
+                    <div id="review-badge" class="bg-purple-600 text-white px-3 py-1 rounded font-bold hidden">
+                        MODE KOREKSI & PEMBAHASAN
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col lg:flex-row gap-4">
+            
+            <div class="flex-1 flex flex-col justify-between bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                
+                <div class="p-6 md:p-8 flex-1">
+                    <div class="flex items-center justify-between border-b border-gray-200 pb-3 mb-4">
+                        <h2 class="text-lg font-bold text-gray-800">SOAL NOMOR <span id="current-number-title" class="text-blue-600">1</span></h2>
+                        <span id="question-category" class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">TIU</span>
+                    </div>
+                    
+                    <div id="question-text" class="text-gray-800 text-base md:text-lg mb-6 leading-relaxed">
+                        Loading soal...
+                    </div>
+
+                    <div id="options-container" class="space-y-3"></div>
+
+                    <div id="pembahasan-container" class="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg hidden">
+                        <h4 class="font-bold text-blue-900 text-sm mb-1">💡 Pembahasan & Kunci Jawaban:</h4>
+                        <p id="pembahasan-text" class="text-sm text-blue-800 leading-relaxed"></p>
+                    </div>
+                </div>
+
+                <div class="bg-gray-50 border-t border-gray-200 p-4 flex justify-between items-center gap-2">
+                    <button id="btn-prev" onclick="soalSebelumnya()" 
+                        class="bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded shadow transition disabled:opacity-40 disabled:cursor-not-allowed text-sm md:text-base cursor-pointer">
+                        ◀ Soal Sebelumnya
+                    </button>
+                    
+                    <button id="btn-ragu" onclick="toggleRaguRagu()" 
+                        class="bg-yellow-400 hover:bg-yellow-500 text-gray-900 font-bold py-2 px-6 rounded shadow transition text-sm md:text-base flex items-center gap-1 cursor-pointer">
+                        <input type="checkbox" id="ragu-checkbox" class="pointer-events-none w-4 h-4"> Ragu-Ragu
+                    </button>
+                    
+                    <button id="btn-next" onclick="soalBerikutnya()" 
+                        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition text-sm md:text-base cursor-pointer">
+                        Soal Berikutnya ▶
+                    </button>
+                </div>
+
+            </div>
+
+            <aside class="w-full lg:w-80 lg:sticky lg:top-20 h-fit bg-white rounded-lg shadow-sm border border-gray-200 flex flex-col overflow-hidden">
+                <div class="bg-gray-100 p-3 font-bold text-gray-700 border-b border-gray-200 text-center lg:text-left">
+                    Daftar Soal
+                </div>
+                <div id="number-grid" class="p-4 grid grid-cols-5 gap-2 max-h-64 lg:max-h-[70vh] overflow-y-auto custom-scrollbar"></div>
+            </aside>
+
+        </main>
+
+    </div>
+
+    <script>
+        const bankSoal = [
+            { id: 31, cat: "Analogi Kata", text: "Negosiasi : Sengketa = ... : ...", options: { A: "Pakta : Perjanjian", B: "Gencatan : Pertempuran", C: "Penjelasan : Kesalahpahaman", D: "Koalisi : Lembaga", E: "Klaim : Hak" }, correct: "C", explain: "Negosiasi dilakukan untuk menyelesaikan sengketa. Secara setara, penjelasan dilakukan untuk menyelesaikan kesalahpahaman." },
+            { id: 32, cat: "Analogi Kata (Kategori)", text: "Mujair : Gurame : Pisces", options: { A: "Paus : Hiu : Mamalia", B: "Merpati : Kelelawar : Aves", C: "Kambing : Sapi : Herbivora", D: "Tuna : Salmon : Pisces", E: "Lalat : Kelabang : Serangga" }, correct: "D", explain: "Mujair dan Gurame adalah jenis hewan yang termasuk dalam kelas Pisces (ikan). Hubungan yang setara adalah Tuna dan Salmon yang juga merupakan anggota kelas Pisces." },
+            { id: 33, cat: "Hubungan Kalimat / Penalaran", text: "Budi rajin membaca buku untuk memperluas wawasan keilmuannya.Hubungan tersebut setara dengan...", options: { A: "Siska sering berbelanja online agar tidak ketinggalan tren fashion.", B: "Joko berlatih vokal setiap hari supaya suaranya semakin merdu dan stabil.", C: "Doni minum kopi hitam manis sebelum mulai bekerja lembur.", D: "Tika tidur siang dengan teratur agar wajahnya terlihat segar.", E: "Adi memakai jaket tebal supaya tidak kedinginan di musim hujan." }, correct: "B", explain: "Pernyataan utama menunjukkan aktivitas yang dilakukan secara konsisten/rutin (rajin membaca) untuk meningkatkan kualitas diri/kapabilitas (memperluas wawasan). Hal ini setara dengan Joko yang berlatih vokal setiap hari untuk meningkatkan kualitas suaranya." },
+            { id: 34, cat: "Hubungan Kalimat / Penalaran", text: "Pelatih memberikan arahan kepada atletnya agar selalu menjaga sportivitas.Hubungan ini setara dengan...", options: { A: "Apoteker menjelaskan dosis obat kepada pembeli toko.", B: "Ibu melarang anaknya bermain di luar rumah saat hujan deras.", C: "Hakim membacakan vonis hukuman kepada terdakwa di persidangan.", D: "Polisi lalu lintas mengatur kendaraan di persimpangan jalan yang macet.", E: "Motivator memberikan pencerahan kepada audiensnya agar optimistis menatap masa depan." }, correct: "E", explain: "Hubungan dalam soal menunjukkan figur otoritas/pembimbing (Pelatih) yang memberikan bimbingan moral/motivasi (arahan sportivitas) kepada kelompok binaannya (atlet). Pilihan E menunjukkan hubungan serupa antara Motivator dan audiensnya." },
+            { id: 35, cat: "Penalaran Logis (Silogisme)", text: "Di sebuah perusahaan, semua karyawan tetap diwajibkan mengikuti pelatihan manajemen risiko.Fandi adalah salah satu karyawan magang yang berprestasi dan akan diangkat menjadi karyawan tetap bulan depan.Ia sering membantu divisi manajemen risiko menyusun dokumen evaluasi mingguan.Kesimpulannya adalah...", options: { A: "Semua karyawan magang wajib mengikuti pelatihan manajemen risiko.", B: "Fandi membantu divisi manajemen risiko karena ingin segera diangkat menjadi karyawan tetap.", C: "Semua karyawan tetap aktif membantu divisi manajemen risiko.", D: "Fandi wajib mengikuti pelatihan manajemen risiko.", E: "Fandi belum wajib mengikuti pelatihan manajemen risiko." }, correct: "E", explain: "Kewajiban mengikuti pelatihan hanya berlaku untuk karyawan tetap. Karena Fandi saat ini masih berstatus karyawan magang (baru akan diangkat bulan depan), maka Fandi belum wajib mengikutinya." },
+            { id: 36, cat: "Penalaran Logis", text: "Di sebuah desa, koperasi mengadakan program penyuluhan pertanian organik bagi para petani setempat.Tidak semua petani mendaftar untuk mengikuti penyuluhan tersebut. Sebagian petani yang mendaftar adalah petani padi, dan sebagian lainnya petani hortikultura.Sementara itu, Pak Joko adalah petani padi yang sedang sibuk mempersiapkan masa panen raya di sawahnya.Kesimpulannya adalah...", options: { A: "Pak Joko pasti mengikuti penyuluhan karena dia adalah petani padi.", B: "Pak Joko tidak ikut penyuluhan karena dia sedang sibuk dengan panen raya.", C: "Semua petani setempat wajib mengikuti program penyuluhan pertanian.", D: "Pak Joko sedang sibuk mempersiapkan masa panen raya di sawahnya.", E: "Tidak dapat disimpulkan" }, correct: "E", explain: "Tidak ada premis yang memastikan apakah kesibukan Pak Joko membuatnya tidak mendaftar atau tetap mendaftar program penyuluhan tersebut. Maka kesimpulan yang tepat adalah tidak dapat disimpulkan." },
+            { id: 37, cat: "Penalaran Logis", text: "Semua mahasiswa yang berhasil mempublikasikan artikel di jurnal internasional bereputasi sebelum semester 7 akan mendapatkan bebas ujian skripsi.Citra adalah salah satu mahasiswa yang berhasil mempublikasikan artikel di jurnal tersebut pada semester 5.Selain itu, ia juga mendapatkan penghargaan sebagai mahasiswa berprestasi dari rektor.Kesimpulan yang paling tepat berdasarkan pernyataan di atas adalah...", options: { A: "Citra tidak mendapatkan bebas ujian skripsi karena belum mencapai semester 7.", B: "Citra mendapatkan bebas ujian skripsi.", C: "Citra mendapatkan bebas ujian skripsi karena mendapat penghargaan dari rektor.", D: "Citra mendapatkan bebas ujian skripsi karena aktif menulis dan melakukan penelitian laboratorium.", E: "Tidak dapat disimpulkan" }, correct: "B", explain: "Citra memenuhi syarat bebas ujian skripsi karena berhasil mempublikasikan artikel pada semester 5 (yang mana merupakan waktu sebelum semester 7)." },
+            { id: 38, cat: "Penalaran Logis", text: "Dalam sebuah klub kebugaran, anggota yang ingin mengambil kelas Angkat Beban Lanjutan harus sudah lulus kelas Teknik Dasar Beban.Anggota yang telah lulus kelas Teknik Dasar Beban diperbolehkan menggunakan ruang latihan utama tanpa pendamping.Kevin saat ini sedang mengambil kelas Angkat Beban Lanjutan dan aktif menggunakan ruang latihan utama tanpa pendamping.Kesimpulan yang paling tepat adalah...", options: { A: "Kevin mengambil kelas Angkat Beban Lanjutan karena ingin menggunakan ruang latihan utama.", B: "Kevin belum lulus kelas Teknik Dasar Beban.", C: "Kevin telah lulus kelas Teknik Dasar Beban.", D: "Semua anggota yang mengambil kelas Angkat Beban Lanjutan otomatis menggunakan ruang latihan utama.", E: "Kevin mengikuti kelas Teknik Dasar Beban dan Angkat Beban Lanjutan secara bersamaan." }, correct: "C", explain: "Karena Kevin mengambil kelas Angkat Beban Lanjutan, ia pasti sudah memenuhi prasyaratnya, yaitu telah lulus kelas Teknik Dasar Beban." },
+            { id: 39, cat: "Penalaran Analitis (Posisi Duduk)", text: "Enam orang siswa — Aris, Bima, Cici, Doni, Elsa, dan Fia — duduk mengelilingi meja bundar untuk belajar bersama.Berikut ini adalah informasi tentang posisi duduk mereka:- Aris duduk di antara Bima dan Fia.- Cici duduk dua tempat di sebelah kiri Aris.- Doni tidak duduk di sebelah langsung Aris maupun Fia.Siapakah yang duduk berhadapan dengan Doni?", options: { A: "Fia", B: "Bima", C: "Elsa", D: "Aris", E: "Cici" }, correct: "D", explain: "Jika posisi diatur melingkar (1 sampai 6), misal Aris di 1, Bima di 2, Fia di 6. Cici dua tempat di kiri Aris berarti di posisi 3. Doni tidak boleh di dekat Aris (2,6) maupun Fia (6,5), sehingga Doni harus di posisi 4. Posisi 4 berhadapan langsung dengan posisi 1 (Aris)." },
+            { id: 40, cat: "Penalaran Analitis (Rute Alternatif)", text: "Seorang kurir ingin mengantar paket dari Kota P menuju Kota U. Terdapat beberapa rute alternatif dengan jalur yang bercabang di beberapa kota:- Dari Kota P, bisa ke Kota Q atau Kota R- Dari Kota Q, bisa ke Kota S atau Kota T- Dari Kota R, bisa ke Kota U atau Kota V- Dari Kota T, bisa ke Kota U- Dari Kota V, bisa ke Kota UBerapa banyak jalur berbeda yang bisa dipilih kurir dari Kota P ke Kota U?", options: { A: "2", B: "3", C: "4", D: "5", E: "6" }, correct: "B", explain: "Jalur yang mungkin: (1) P -> Q -> T -> U; (2) P -> R -> U; (3) P -> R -> V -> U. Jalur P -> Q -> S terputus karena tidak ada kelanjutan ke U. Jadi ada 3 jalur berbeda." },
+            { id: 41, cat: "Penalaran Analitis (Urutan Posisi)", text: "Delapan orang sahabat rutin jogging setiap sore hari. Mereka adalah Ali, Budi, Candra, Dedi, Edo, Fahri, Gani, dan Hari.Agar jogging terlihat rapi mereka berlari berpasangan membentuk 4 baris dengan informasi berikut:- Ali berada persis di depan Dedi- Candra berada persis di depan Fahri- Fahri berdampingan dengan Edo- Candra terletak di urutan kedua diatas Fahri dan Gani- Hari berada di belakang Edo- Sedangkan Budi berlari berdampingan dengan AliPernyataan yang benar adalah...", options: { A: "Posisi Dedi terletak diantara Ali dan Edo", B: "Posisi Gani lebih depan daripada Edo", C: "Posisi Hari berada di samping Fahri", D: "Posisi Fahri terletak di depan Edo", E: "Posisi Budi dibelakang Gani" }, correct: "A", explain: "Berdasarkan aturan, Ali-Budi di baris 1, Dedi-Gani di baris 2, Candra-X di baris 3, Fahri-Edo di baris 4. Maka posisi Dedi (baris 2) berada di antara Ali (baris 1) dan Edo (baris 4)." },
+            { id: 42, cat: "Penalaran Analitis (Urutan Finish)", text: "Lima orang sahabat yang memiliki hobi yang sama yaitu lari marathon, mengikuti sebuah perlombaan lokal.Kelima orang tersebut, Ani, Budi, Cici, Dedi, dan Edi berhasil mencapai garis finish dengan urutan sebagai berikut:- Dedi finish sesudah Budi tetapi sebelum Cici.- Edi finish tepat setelah Budi finish.- Ani finish tepat setelah Dedi finish.Urutan finish kelima orang tersebut adalah ....", options: { A: "Budi - Dedi - Edi - Ani - Cici", B: "Budi - Dedi - Edi - Ani - Cici", C: "Budi - Edi - Dedi - Ani - Cici", D: "Budi - Edi - Dedi - Cici - Ani", E: "Budi - Edi - Ani - Dedi - Cici" }, correct: "C", explain: "Dari petunjuk: Budi paling awal, disusul tepat oleh Edi (Budi - Edi). Dedi setelah Budi/Edi dan sebelum Cici. Ani tepat setelah Dedi. Maka urutannya menjadi Budi - Edi - Dedi - Ani - Cici." },
+            { id: 43, cat: "Berhitung - Perbandingan Senilai", text: "Sebuah mesin genset membutuhkan 20 liter solar untuk menyala selama 5 jam.Jika genset tersebut harus menyala selama 12 jam, maka jumlah tambahan solar yang dibutuhkan adalah...", options: { A: "48 liter", B: "28 liter", C: "20 liter", D: "18 liter", E: "8 liter" }, correct: "B", explain: "Kebutuhan total solar untuk 12 jam = (12 / 5) * 20 liter = 48 liter. Tambahan solar yang diperlukan = 48 liter - 20 liter = 28 liter." },
+            { id: 44, cat: "Berhitung - Jarak, Waktu, Kecepatan", text: "Sebuah truk menempuh jarak dari Kota P ke Kota Q dalam waktu 6 jam dengan kecepatan rata-rata 50 km/jam.Ketika kembali dari Kota Q ke Kota P, kecepatan rata-ratanya menjadi 75 km/jam, namun truk berhenti 45 menit untuk istirahat.Berapa lama total waktu perjalanan dari Kota P ke Kota Q dan kembali lagi?", options: { A: "9 jam 45 menit", B: "10 jam", C: "10 jam 45 menit", D: "11 jam", E: "11 jam 15 menit" }, correct: "C", explain: "Jarak P ke Q = 6 jam * 50 km/jam = 300 km. Waktu perjalanan kembali = 300 km / 75 km/jam = 4 jam. Total waktu = 6 jam (pergi) + 4 jam (pulang) + 45 menit (istirahat) = 10 jam 45 menit." },
+            { id: 45, cat: "Berhitung - Perbandingan Berbalik Nilai (Pekerja)", text: "Sebuah tim yang terdiri dari 10 pekerja mampu menyelesaikan renovasi sebuah rumah dalam waktu 12 hari kerja.Ternyata, proyek tersebut harus selesai 4 hari lebih cepat dari rencana awal.Namun, di hari ke-5 dari pengerjaan proyek, 2 pekerja berhenti dan tidak kembali.Berapakah jumlah pekerja yang harus ada sejak awal agar renovasi bisa selesai tepat waktu?", options: { A: "12 pekerja", B: "14 pekerja", C: "15 pekerja", D: "16 pekerja", E: "18 pekerja" }, correct: "D", explain: "Beban kerja total = 10 * 12 = 120 orang-hari. Target selesai = 12 - 4 = 8 hari. Jika awal ada X pekerja: 4 hari pertama dikerjakan X orang (4X). 4 hari sisa dikerjakan (X-2) orang -> 4(X-2). Maka 4X + 4X - 8 = 120 -> 8X = 128 -> X = 16 pekerja." },
+            { id: 46, cat: "Berhitung - Kecepatan Kerja Bersama", text: "Dodi bisa menyelesaikan mengecat rumah dalam 15 hari, sedangkan Eman bisa menyelesaikan pekerjaan yang sama dalam 10 hari.Jika mereka bekerja bersama-sama selama 4 hari, berapa bagian pekerjaan yang sudah selesai?", options: { A: "\\(\\frac{1}{3}\\)", B: "\\(\\frac{2}{3}\\)", C: "\\(\\frac{2}{5}\\)", D: "\\(\\frac{3}{5}\\)", E: "\\(\\frac{3}{4}\\)" }, correct: "B", explain: "Kemampuan bersama 1 hari = \\(\\frac{1}{15} + \\frac{1}{10} = \\frac{2}{30} + \\frac{3}{30} = \\frac{5}{30} = \\frac{1}{6}\\) bagian/hari. Dalam 4 hari, bagian pekerjaan selesai = \\(4 \\times \\frac{1}{6} = \\frac{4}{6} = \\frac{2}{3}\\) bagian." },
+            { id: 47, cat: "Berhitung - Konsumsi Pakan Bersama", text: "Sapi A dapat menghabiskan 80 kg rumput dalam 4 hari.Sapi B dapat menghabiskan 120 kg rumput dalam 5 hari.Jika keduanya makan bersama-sama, berapa kg rumput yang mereka habiskan dalam 3 hari?", options: { A: "110 kg", B: "120 kg", C: "126 kg", D: "132 kg", E: "144 kg" }, correct: "D", explain: "Laju konsumsi Sapi A = 80 / 4 = 20 kg/hari. Laju konsumsi Sapi B = 120 / 5 = 24 kg/hari. Konsumsi bersama 1 hari = 20 + 24 = 44 kg/hari. Dalam 3 hari = 3 * 44 = 132 kg." },
+            { id: 48, cat: "Deret Angka", text: "-16, 14, -2, 12, 10, ...", options: { A: "-12", B: "12", C: "22", D: "-24", E: "23" }, correct: "C", explain: "Pola deret Fibonacci (penjumlahan dua angka sebelumnya): -16 + 14 = -2; 14 + (-2) = 12; -2 + 12 = 10; maka angka berikutnya adalah 12 + 10 = 22." },
+            { id: 49, cat: "Deret Angka", text: "20, 21, 41, -20, 21, -41, -20, ...", options: { A: "-61", B: "-41", C: "-21", D: "20", E: "21" }, correct: "C", explain: "Kelanjutan deret sesuai pola operasi antar elemen menghasilkan nilai -21." },
+            { id: 50, cat: "Deret Angka", text: "9, 9, 9, 6, 9, 3, ..., ...", options: { A: "9, 11", B: "13, 17", C: "19, 10", D: "9, 0", E: "11, 9" }, correct: "D", explain: "Lompatan deret selang-seling tetap angka 9 pada indeks ganjil, sedangkan angka genap berkurang 3 (9, 6, 3, 0). Maka kelanjutannya adalah 9 dan 0." },
+            { id: 51, cat: "Berhitung - Kecepatan", text: "Sebuah bus menempuh jarak dari Kota A ke Kota B dalam waktu 4 jam dengan kecepatan rata-rata 60 km/jam. Ketika kembali dari Kota B ke Kota A, kecepatan rata-ratanya meningkat menjadi 80 km/jam, namun bus tersebut sempat berhenti selama 30 menit untuk mengisi bahan bakar. Berapa lama total waktu perjalanan bus tersebut dari Kota A ke Kota B dan kembali lagi?", options: { A: "7 jam", B: "7 jam 30 menit", C: "8 jam", D: "8 jam 30 menit", E: "9 jam" }, correct: "B", explain: "Jarak = 4 jam * 60 km/jam = 240 km. Waktu pulang = 240 km / 80 km/jam = 3 jam. Total waktu = 4 jam + 3 jam + 30 menit = 7 jam 30 menit." },
+            { id: 52, cat: "Berhitung - Kecepatan", text: "Seorang pengendara motor menempuh perjalanan dari tempat X ke tempat Y selama 3 jam dengan kecepatan rata-rata 40 km/jam. Saat pulang melewati rute yang sama, ia memacu motornya dengan kecepatan rata-rata 60 km/jam, namun ia sempat berteduh karena hujan selama 20 menit. Berapa lama total waktu yang dihabiskan pengendara tersebut untuk perjalanan pergi dan pulang?", options: { A: "5 jam", B: "5 jam 10 menit", C: "5 jam 20 menit", D: "5 jam 30 menit", E: "5 jam 40 menit" }, correct: "C", explain: "Jarak = 3 * 40 = 120 km. Waktu pulang = 120 / 60 = 2 jam. Total waktu = 3 jam + 2 jam + 20 menit = 5 jam 20 menit." },
+            { id: 53, cat: "Berhitung - Pekerja", text: "Sebuah proyek pembangunan jembatan direncanakan selesai dalam waktu 20 hari oleh 12 pekerja. Karena suatu hal, proyek tersebut ditargetkan harus selesai 5 hari lebih cepat dari rencana. Namun, pada hari ke-6 pengerjaan berjalan, terdapat 3 pekerja yang mengundurkan diri dan tidak diganti. Berapakah jumlah pekerja yang harus dikerahkan sejak awal agar proyek selesai tepat sesuai target baru tersebut?", options: { A: "15 pekerja", B: "16 pekerja", C: "18 pekerja", D: "20 pekerja", E: "21 pekerja" }, correct: "C", explain: "Berdasarkan prinsip beban kerja konstan (orang-hari), jumlah pekerja yang diperlukan sejak awal adalah 18 pekerja." },
+            { id: 54, cat: "Berhitung - Pekerja", text: "Sebuah konveksi pakaian dengan 8 karyawan dapat menyelesaikan pesanan seragam dalam waktu 10 hari. Pemesan meminta pakaian tersebut selesai 2 hari lebih cepat. Di hari ke-5 pengerjaan, 2 karyawan jatuh sakit dan tidak bisa melanjutkan kerja. Berapa jumlah karyawan yang seharusnya dipekerjakan sejak awal agar pesanan selesai tepat waktu?", options: { A: "10 orang", B: "11 orang", C: "12 orang", D: "13 orang", E: "14 orang" }, correct: "A", explain: "Perhitungan komparasi pekerja berbalik nilai dengan kendala pengurangan orang di pertengahan waktu menghasilkan nilai ideal 10 orang sejak awal." },
+            { id: 55, cat: "Berhitung - Kerja Bersama", text: "Andi dapat merakit sebuah komputer dalam waktu 6 jam, sedangkan Budi dapat merakit komputer yang sama dalam waktu 4 jam. Jika mereka merakit komputer tersebut bersama-sama selama 2 jam, berapa bagian komputer yang sudah berhasil dirakit?", options: { A: "\\(\\frac{1}{2}\\)", B: "\\(\\frac{2}{3}\\)", C: "\\(\\frac{3}{4}\\)", D: "\\(\\frac{5}{6}\\)", E: "\\(\\frac{11}{12}\\)" }, correct: "D", explain: "Laju bersama = \\(\\frac{1}{6} + \\frac{1}{4} = \\frac{2}{12} + \\frac{3}{12} = \\frac{5}{12}\\) per jam. Dalam 2 jam = \\(2 \\times \\frac{5}{12} = \\frac{10}{12} = \\frac{5}{6}\\) bagian." },
+            { id: 56, cat: "Berhitung - Kerja Bersama", text: "Rani mampu membersihkan kebun dalam waktu 12 menit, sementara Sinta mampu membersihkannya dalam waktu 18 menit. Jika mereka membersihkan kebun bersama-sama selama 6 menit, berapa bagian kebun yang telah dibersihkan?", options: { A: "\\(\\frac{5}{6}\\)", B: "\\(\\frac{2}{3}\\)", C: "\\(\\frac{5}{9}\\)", D: "\\(\\frac{4}{9}\\)", E: "\\(\\frac{1}{2}\\)" }, correct: "A", explain: "Laju bersama = \\(\\frac{1}{12} + \\frac{1}{18} = \\frac{3}{36} + \\frac{2}{36} = \\frac{5}{36}\\) per menit. Dalam 6 menit = \\(6 \\times \\frac{5}{36} = \\frac{30}{36} = \\frac{5}{6}\\) bagian." },
+            { id: 57, cat: "Berhitung - Konsumsi Pakan", text: "Kambing P dapat menghabiskan 15 kg rumput dalam waktu 3 hari. Kambing Q dapat menghabiskan 20 kg rumput dalam waktu 4 hari. Jika kedua kambing tersebut diberi makan bersama-sama, berapa kg rumput yang dapat mereka habiskan dalam waktu 5 hari?", options: { A: "45 kg", B: "50 kg", C: "55 kg", D: "60 kg", E: "65 kg" }, correct: "B", explain: "Laju P = 15/3 = 5 kg/hari. Laju Q = 20/4 = 5 kg/hari. Laju bersama = 5 + 5 = 10 kg/hari. Dalam 5 hari = 5 * 10 = 50 kg." },
+            { id: 58, cat: "Berhitung - Mesin Cetak", text: "Mesin cetak A dapat menghabiskan 300 lembar kertas dalam waktu 6 menit. Mesin cetak B dapat menghabiskan 400 lembar kertas dalam waktu 5 menit. Jika kedua mesin digunakan bersamaan, berapa lembar kertas yang dihabiskan kedua mesin tersebut dalam waktu 4 menit?", options: { A: "480 lembar", B: "500 lembar", C: "520 lembar", D: "540 lembar", E: "560 lembar" }, correct: "C", explain: "Laju A = 300/6 = 50 lbr/menit. Laju B = 400/5 = 80 lbr/menit. Laju bersama = 50 + 80 = 130 lbr/menit. Dalam 4 menit = 4 * 130 = 520 lembar." }
+        ];
+
+        let currentIndex = 0;
+        let jawabanSiswa = {}; 
+        let statusRagu = {};   
+        let sisaWaktu = 30 * 60; 
+        let timerInterval;
+        let isReviewMode = false;
+
+        function mulaiUjian() {
+            const namaInput = document.getElementById('username-input').value.trim();
+            const passwordInput = document.getElementById('password-input').value; // Mengambil data password
+            
+            if (!namaInput) {
+                alert('Silakan masukkan nama Anda terlebih dahulu!');
+                return;
+            }
+            
+            // Validasi password tiuvr
+            if (passwordInput !== 'tiuvr') {
+                alert('Password salah! Silakan coba lagi.');
+                return;
+            }
+
+            document.getElementById('login-page').style.display = 'none';
+            document.getElementById('main-app').classList.remove('hidden');
+            document.getElementById('main-app').classList.add('flex');
+            document.getElementById('display-nama').innerText = namaInput;
+
+            initTimer();
+            renderGridNomor();
+            tampilkanSoal(currentIndex);
+        }
+
+        function initTimer() {
+            timerInterval = setInterval(() => {
+                if (sisaWaktu <= 0) {
+                    clearInterval(timerInterval);
+                    alert("Waktu pengerjaan ujian telah habis!");
+                    evaluasiSelesaiUjian();
+                    return;
+                }
+                sisaWaktu--;
+                let jam = Math.floor(sisaWaktu / 3600);
+                let menit = Math.floor((sisaWaktu % 3600) / 60);
+                let detik = sisaWaktu % 60;
+                document.getElementById('timer').innerText = 
+                    `${String(jam).padStart(2, '0')}:${String(menit).padStart(2, '0')}:${String(detik).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function tampilkanSoal(index) {
+            currentIndex = index;
+            const soal = bankSoal[index];
+
+            document.getElementById('current-number-title').innerText = soal.id;
+            document.getElementById('question-category').innerText = soal.cat;
+            document.getElementById('question-text').innerText = soal.text;
+
+            const containerOptions = document.getElementById('options-container');
+            containerOptions.innerHTML = '';
+
+            Object.entries(soal.options).forEach(([kunci, teksJawaban]) => {
+                const apakahTerpilih = jawabanSiswa[index] === kunci;
+                let optionStyle = 'bg-white border-gray-200 hover:bg-gray-50';
+                let circleStyle = 'bg-gray-100 text-gray-700 border-gray-300';
+
+                if (isReviewMode) {
+                    if (kunci === soal.correct) {
+                        optionStyle = 'bg-green-50 border-green-500 font-semibold';
+                        circleStyle = 'bg-green-600 text-white border-green-600';
+                    } else if (apakahTerpilih && jawabanSiswa[index] !== soal.correct) {
+                        optionStyle = 'bg-red-50 border-red-400';
+                        circleStyle = 'bg-red-500 text-white border-red-500';
+                    }
+                } else if (apakahTerpilih) {
+                    optionStyle = 'bg-blue-50 border-blue-600 font-semibold';
+                    circleStyle = 'bg-blue-600 text-white border-blue-600';
+                }
+
+                const optionBtn = document.createElement('div');
+                optionBtn.className = `flex items-center gap-3 p-3 border-2 rounded-lg transition ${optionStyle} ${isReviewMode ? 'cursor-default' : 'cursor-pointer'}`;
+                if (!isReviewMode) {
+                    optionBtn.onclick = () => pilihJawaban(index, kunci);
+                }
+
+                optionBtn.innerHTML = `
+                    <div class="w-8 h-8 flex items-center justify-center rounded-full border-2 text-sm font-bold ${circleStyle}">
+                        ${kunci}
+                    </div>
+                    <div class="text-gray-700 flex-1 text-sm md:text-base">${teksJawaban}</div>
+                `;
+                containerOptions.appendChild(optionBtn);
+            });
+
+            const pembContainer = document.getElementById('pembahasan-container');
+            if (isReviewMode && soal.explain) {
+                document.getElementById('pembahasan-text').innerText = soal.explain;
+                pembContainer.classList.remove('hidden');
+            } else {
+                pembContainer.classList.add('hidden');
+            }
+
+            document.getElementById('ragu-checkbox').checked = statusRagu[index] || false;
+            document.getElementById('btn-prev').disabled = index === 0;
+            
+            const btnNext = document.getElementById('btn-next');
+            if (index === bankSoal.length - 1) {
+                if (isReviewMode) {
+                    btnNext.innerText = "Kembali ke Awal";
+                    btnNext.className = "bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-4 rounded shadow transition text-sm md:text-base cursor-pointer";
+                    btnNext.onclick = () => tampilkanSoal(0);
+                } else {
+                    btnNext.innerText = "Selesai ✔";
+                    btnNext.className = "bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded shadow transition text-sm md:text-base cursor-pointer";
+                    btnNext.onclick = konfirmasiSelesaiUjian;
+                }
+            } else {
+                btnNext.innerText = "Soal Berikutnya ▶";
+                btnNext.className = "bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow transition text-sm md:text-base cursor-pointer";
+                btnNext.onclick = soalBerikutnya;
+            }
+
+            updateGridWarna();
+
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function pilihJawaban(index, kunci) {
+            jawabanSiswa[index] = kunci;
+            tampilkanSoal(index);
+        }
+
+        function toggleRaguRagu() {
+            if (isReviewMode) return;
+            statusRagu[currentIndex] = !statusRagu[currentIndex];
+            tampilkanSoal(currentIndex);
+        }
+
+        function soalSebelumnya() {
+            if (currentIndex > 0) tampilkanSoal(currentIndex - 1);
+        }
+
+        function soalBerikutnya() {
+            if (currentIndex < bankSoal.length - 1) tampilkanSoal(currentIndex + 1);
+        }
+
+        function konfirmasiSelesaiUjian() {
+            let totalTerjawab = Object.keys(jawabanSiswa).length;
+            if (confirm(`Apakah Anda yakin ingin menyelesaikan ujian ini?\nAnda telah menjawab ${totalTerjawab} dari ${bankSoal.length} soal.`)) {
+                evaluasiSelesaiUjian();
+            }
+        }
+
+        function evaluasiSelesaiUjian() {
+            clearInterval(timerInterval);
+            
+            let benar = 0;
+            bankSoal.forEach((soal, index) => {
+                if (jawabanSiswa[index] === soal.correct) {
+                    benar++;
+                }
+            });
+
+            let skorAkhir = Math.round((benar / bankSoal.length) * 100);
+
+            document.getElementById('display-skor').innerText = skorAkhir;
+            document.getElementById('display-benar').innerText = benar;
+            document.getElementById('display-total').innerText = bankSoal.length;
+
+            document.getElementById('score-modal').classList.remove('hidden');
+            document.getElementById('score-modal').classList.add('flex');
+        }
+
+        function tutupSkorDanReview() {
+            document.getElementById('score-modal').classList.remove('flex');
+            document.getElementById('score-modal').classList.add('hidden');
+            
+            isReviewMode = true;
+            document.getElementById('timer-container').classList.add('hidden');
+            document.getElementById('review-badge').classList.remove('hidden');
+            document.getElementById('btn-ragu').classList.add('hidden');
+
+            tampilkanSoal(0);
+        }
+
+        function renderGridNomor() {
+            const gridContainer = document.getElementById('number-grid');
+            gridContainer.innerHTML = '';
+
+            bankSoal.forEach((soal, index) => {
+                const btnNomor = document.createElement('button');
+                btnNomor.id = `grid-no-${index}`;
+                btnNomor.onclick = () => tampilkanSoal(index);
+                gridContainer.appendChild(btnNomor);
+            });
+        }
+
+        function updateGridWarna() {
+            bankSoal.forEach((soal, index) => {
+                const btnNomor = document.getElementById(`grid-no-${index}`);
+                if (!btnNomor) return;
+
+                const sudahDijawab = jawabanSiswa[index] !== undefined;
+                const isRagu = statusRagu[index] === true;
+                const isAktif = currentIndex === index;
+
+                // Ditambahkan kelas font-extrabold text-base agar nomor daftar soal terbaca sangat jelas
+                let classList = "w-full aspect-square flex flex-col items-center justify-center font-extrabold text-base rounded border transition cursor-pointer ";
+
+                if (isReviewMode) {
+                    if (jawabanSiswa[index] === soal.correct) {
+                        classList += "bg-green-600 text-white border-green-700 hover:bg-green-700";
+                    } else if (sudahDijawab && jawabanSiswa[index] !== soal.correct) {
+                        classList += "bg-red-500 text-white border-red-600 hover:bg-red-600";
+                    } else {
+                        classList += "bg-white text-gray-400 border-gray-200 hover:bg-gray-100";
+                    }
+                } else {
+                    if (isRagu) {
+                        classList += "bg-yellow-400 text-gray-900 border-yellow-500 hover:bg-yellow-500";
+                    } else if (sudahDijawab) {
+                        classList += "bg-green-600 text-white border-green-700 hover:bg-green-700";
+                    } else {
+                        classList += "bg-white text-gray-700 border-gray-300 hover:bg-gray-100";
+                    }
+                }
+
+                if (isAktif) {
+                    classList += " ring-4 ring-blue-500 ring-offset-1 scale-105 z-10";
+                }
+
+                btnNomor.className = classList;
+
+                if (sudahDijawab) {
+                    btnNomor.innerHTML = `<span class="text-xs leading-none">${soal.id}</span><span class="text-[10px] font-normal opacity-90 mt-0.5">${jawabanSiswa[index]}</span>`;
+                } else {
+                    btnNomor.innerHTML = `<span>${soal.id}</span>`;
+                }
+            });
+        }
+    </script>
+</body>
+</html>
